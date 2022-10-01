@@ -7,15 +7,15 @@ public class RocketController : MonoBehaviour
     public Slider speedSlider;
     public TextMeshProUGUI outcomeText;
     public GameObject outcomePanel;
-        
-    // Start is called before the first frame update
+
+    public Sprite explosion;
+
     void Start()
     {
         speedSlider.value = 1;
         outcomePanel.SetActive(false);
     }
 
-    // Update is called once per frame
     void Update()
     {
         
@@ -28,12 +28,22 @@ public class RocketController : MonoBehaviour
             case 0 :
                 NoLiftoff();
                 break;
+            case 4 :
+                TooMuchSpeed();
+                break;
         }
     }
 
     public void NoLiftoff()
     {
         outcomePanel.SetActive(true);
-        outcomeText.text = "You need to choose speed before you can launch!";
+        outcomeText.text = "You need some speed before you can launch.";
+    }
+
+    public void TooMuchSpeed()
+    {
+        gameObject.GetComponent<Image>().sprite = explosion;
+        outcomePanel.SetActive(true);
+        outcomeText.text = "You put too much pressure on the engines and the rocket exploded.";
     }
 }
