@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using Vector2 = UnityEngine.Vector2;
@@ -16,12 +17,14 @@ public class RocketController : MonoBehaviour
     public GameObject launchButton;
     public GameObject outcomePanel;
     public TextMeshProUGUI outcomeText;
+    public GameObject earth;
 
     // animation stuff
     private Vector2 _rocketPosition;
     private Vector2 _initialRocketPosition;
     private Quaternion _initialRocketRotation;
     private bool _readyForLaunch;
+    private bool _inOrbit;
     private float _rocketSpeed;
 
     // path stuff
@@ -29,24 +32,34 @@ public class RocketController : MonoBehaviour
     public Transform[] paths;
     public int currentPath;
 
-    void Start()
+    private void Start()
     {
         _readyForLaunch = true;
+        _inOrbit = false;
         speedSlider.value = 1;
         _initialRocketPosition = gameObject.transform.position;
         _initialRocketRotation = gameObject.transform.rotation;
-        outcomePanel.SetActive(false);
         launchButton.SetActive(true);
         okButton.SetActive(false);
+        outcomePanel.SetActive(false);
     }
-    
+
+    private void Update()
+    {
+        if (_inOrbit)
+        {
+            transform.RotateAround(earth.transform.position, Vector3.forward, Time.deltaTime * _rocketSpeed * 70f);
+        }
+    }
+
     public void ResetRocket()
     {
         if (_readyForLaunch)
         {
-            outcomePanel.SetActive(false);
+            _inOrbit = false;
             okButton.SetActive(false);
             launchButton.SetActive(true);
+            outcomePanel.SetActive(false);
             transform.position = _initialRocketPosition;
             transform.rotation = _initialRocketRotation;
             gameObject.GetComponent<Image>().sprite = rocket;
@@ -55,6 +68,7 @@ public class RocketController : MonoBehaviour
 
     public void Launch()
     {
+        outcomePanel.SetActive(false);
         switch (speedSlider.value)
         {
             case 0:
@@ -62,6 +76,12 @@ public class RocketController : MonoBehaviour
                 break;
             case 1:
                 CrashRocket();
+                break;
+            case 2:
+                LiftOff();
+                break;
+            case 3:
+                ToMoon();
                 break;
             case 4:
                 TooMuchSpeed();
@@ -81,6 +101,30 @@ public class RocketController : MonoBehaviour
         currentPath = 0;
         _t = 0f;
         _rocketSpeed = 0.7f;
+        if (_readyForLaunch)
+        {
+            StartCoroutine(FollowPath(currentPath));
+        }
+    }
+    
+    public void LiftOff()
+    {
+        launchButton.SetActive(false);
+        currentPath = 1;
+        _t = 0f;
+        _rocketSpeed = 0.7f;
+        if (_readyForLaunch)
+        {
+            StartCoroutine(FollowPath(currentPath));
+        }
+    }
+
+    public void ToMoon()
+    {
+        launchButton.SetActive(false);
+        currentPath = 2;
+        _t = 0f;
+        _rocketSpeed = 0.5f;
         if (_readyForLaunch)
         {
             StartCoroutine(FollowPath(currentPath));
@@ -119,6 +163,15 @@ public class RocketController : MonoBehaviour
             {
                 // again * speed * deltaTime to make rotation independent of fps 
                 transform.Rotate(Vector3.forward, 160f * _rocketSpeed * Time.deltaTime, Space.Self);
+            } 
+            else if (path == 1 && _t < 0.65)
+
+            {
+                transform.Rotate(Vector3.forward, 200f * _rocketSpeed * Time.deltaTime, Space.Self);
+            } 
+            else if (path == 2)
+            {
+                transform.Rotate(Vector3.forward, 200f * _rocketSpeed * Time.deltaTime, Space.Self);
             }
             
             yield return new WaitForEndOfFrame();
@@ -133,6 +186,18 @@ public class RocketController : MonoBehaviour
             gameObject.GetComponent<Image>().sprite = explosion;
             outcomePanel.SetActive(true);
             outcomeText.text = "Your rocket was way too slow and it crashed.";
+        }
+        else if (path == 1)
+        {
+            _inOrbit = true;
+            okButton.SetActive(true);
+            outcomePanel.SetActive(true);
+            outcomeText.text = "Your rocket was too slow. It didn't crash, but is stuck in orbit around earth.";
+        }
+        else if (path == 2)
+        {
+            outcomePanel.SetActive(true);
+            outcomeText.text = "You were fast enough to escape earth's gravity and your rocket it now travelling to the Moon.";
         }
     }
 }
