@@ -1,7 +1,5 @@
-using System;
 using System.Collections;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using Vector2 = UnityEngine.Vector2;
@@ -46,6 +44,7 @@ public class RocketController : MonoBehaviour
 
     private void Update()
     {
+        // rotation around earth for "stuck in orbit"-scenario
         if (_inOrbit)
         {
             transform.RotateAround(earth.transform.position, Vector3.forward, Time.deltaTime * _rocketSpeed * 70f);
@@ -91,15 +90,13 @@ public class RocketController : MonoBehaviour
 
     public void NoLiftoff()
     {
-        outcomePanel.SetActive(true);
-        outcomeText.text = "You need some speed before you can launch.";
+        SetOutcome(0);
     }
 
     public void CrashRocket()
     {
         launchButton.SetActive(false);
         currentPath = 0;
-        _t = 0f;
         _rocketSpeed = 0.7f;
         if (_readyForLaunch)
         {
@@ -111,7 +108,6 @@ public class RocketController : MonoBehaviour
     {
         launchButton.SetActive(false);
         currentPath = 1;
-        _t = 0f;
         _rocketSpeed = 0.7f;
         if (_readyForLaunch)
         {
@@ -123,7 +119,6 @@ public class RocketController : MonoBehaviour
     {
         launchButton.SetActive(false);
         currentPath = 2;
-        _t = 0f;
         _rocketSpeed = 0.5f;
         if (_readyForLaunch)
         {
@@ -136,14 +131,14 @@ public class RocketController : MonoBehaviour
         launchButton.SetActive(false);
         okButton.SetActive(true);
         gameObject.GetComponent<Image>().sprite = explosion;
-        outcomePanel.SetActive(true);
-        outcomeText.text = "You put too much pressure on the engines and the rocket exploded.";
+        SetOutcome(4);
     }
 
     public IEnumerator FollowPath(int path)
     {
         _readyForLaunch = false;
-
+        _t = 0f;
+        
         Vector2 p0 = paths[path].GetChild(0).position;
         Vector2 p1 = paths[path].GetChild(1).position;
         Vector2 p2 = paths[path].GetChild(2).position;
@@ -151,53 +146,78 @@ public class RocketController : MonoBehaviour
 
         while (_t < 1)
         {
-            // t = parameter in bezier curve
+            // t = location parameter on bezier curve (range 0 to 1)
             // t = deltaTime * speed = sec/frame * meter/s = meter/frame
             // bezier curve is created in the editor via points and paths
             // rocket position is calculated every frame, via t which determines that position on the curve
             _t += Time.deltaTime * _rocketSpeed;
-            _rocketPosition = Mathf.Pow(1 - _t, 3) * p0 + 3 * Mathf.Pow(1 - _t, 2) * _t * p1 + 3 * (1 - _t) * Mathf.Pow(_t, 2) * p2 + Mathf.Pow(_t, 3) * p3;
+            _rocketPosition = Mathf.Pow(1 - _t, 3) * p0 
+                              + 3 * Mathf.Pow(1 - _t, 2) * _t * p1 
+                              + 3 * (1 - _t) * Mathf.Pow(_t, 2) * p2 
+                              + Mathf.Pow(_t, 3) * p3;
             transform.position = _rocketPosition;
             
-            if (path == 0)
+            // rotations of different paths
+            // again * speed * deltaTime to make rotation independent of fps 
+            switch (path)
             {
-                // again * speed * deltaTime to make rotation independent of fps 
-                transform.Rotate(Vector3.forward, 160f * _rocketSpeed * Time.deltaTime, Space.Self);
-            } 
-            else if (path == 1 && _t < 0.65)
-
-            {
-                transform.Rotate(Vector3.forward, 200f * _rocketSpeed * Time.deltaTime, Space.Self);
-            } 
-            else if (path == 2)
-            {
-                transform.Rotate(Vector3.forward, 200f * _rocketSpeed * Time.deltaTime, Space.Self);
+                case 0 :
+                    transform.Rotate(Vector3.forward, 160f * _rocketSpeed * Time.deltaTime, Space.Self);
+                    break;
+                case 1 :
+                    if (_t < 0.65)
+                    {
+                        transform.Rotate(Vector3.forward, 200f * _rocketSpeed * Time.deltaTime, Space.Self);
+                    }
+                    break;
+                case 2 :
+                    transform.Rotate(Vector3.forward, 200f * _rocketSpeed * Time.deltaTime, Space.Self);
+                    break;
             }
-            
             yield return new WaitForEndOfFrame();
         }
 
         _t = 0f;
         _readyForLaunch = true;
 
-        if (path == 0)
+        switch (path)
         {
-            okButton.SetActive(true);
-            gameObject.GetComponent<Image>().sprite = explosion;
-            outcomePanel.SetActive(true);
-            outcomeText.text = "Your rocket was way too slow and it crashed.";
+            case 0 :
+                okButton.SetActive(true);
+                gameObject.GetComponent<Image>().sprite = explosion;
+                SetOutcome(2);
+                break;
+            case 1 : 
+                _inOrbit = true;
+                okButton.SetActive(true);
+                SetOutcome(3);
+                break;
+            case 2 : 
+                SetOutcome(4);
+                break;
         }
-        else if (path == 1)
+    }
+
+    public void SetOutcome(int scenario)
+    {
+        outcomePanel.SetActive(true);
+        switch (speedSlider.value)
         {
-            _inOrbit = true;
-            okButton.SetActive(true);
-            outcomePanel.SetActive(true);
-            outcomeText.text = "Your rocket was too slow. It didn't crash, but is stuck in orbit around earth.";
-        }
-        else if (path == 2)
-        {
-            outcomePanel.SetActive(true);
-            outcomeText.text = "You were fast enough to escape earth's gravity and your rocket it now travelling to the Moon.";
+            case 0:
+                outcomeText.text = "You need some speed before you can launch.";
+                break;
+            case 1:
+                outcomeText.text = "Your rocket was way too slow and it crashed.";
+                break;
+            case 2:
+                outcomeText.text = "Your rocket was too slow. It didn't crash, but it's stuck in orbit around earth.";
+                break;
+            case 3:
+                outcomeText.text = "You were fast enough to escape earth's gravity and your rocket it now travelling to the Moon.";
+                break;
+            case 4:
+                outcomeText.text = "You put too much pressure on the engines and the rocket exploded.";
+                break;
         }
     }
 }
