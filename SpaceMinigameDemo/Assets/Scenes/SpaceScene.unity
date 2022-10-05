@@ -749,6 +749,7 @@ GameObject:
   - component: {fileID: 744711018}
   - component: {fileID: 744711017}
   - component: {fileID: 744711020}
+  - component: {fileID: 744711021}
   - component: {fileID: 744711016}
   m_Layer: 5
   m_Name: Canvas
@@ -857,6 +858,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd0d0d5352eaa7d48ad79fad79db9332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &744711021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 744711015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d80bd2aface5d64096041d49617ea20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  paths:
+  - {fileID: 1922922860}
+  - {fileID: 1104655700}
+  - {fileID: 168441897}
+  currentPath: 0
 --- !u!1 &779083711
 GameObject:
   m_ObjectHideFlags: 0
@@ -1812,7 +1830,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1363991882}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -80, y: 185, z: 0}
+  m_LocalPosition: {x: -45, y: 156, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
